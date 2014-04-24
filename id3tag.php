@@ -3,69 +3,18 @@ namespace main;
 
 class id3tag
 {
-    const ID3TAG_LENGTH = 10;
-    const FRAME_ID_LENGTH = 4;
     const CONTENT_FRAME_KEY = 'content';
     const TITLE_FRAME_ID = 'TIT2';
 
-    private $resource;
-    private $majorVersion;
-    private $size;
-    private $flags;
+    /** @var id3tagRepository */
+    private $repository;
     private $tags = [];
 
-    public function __construct($resource)
+    public function __construct(id3tagRepository $id3tagRepository)
     {
-        if (gettype($resource) != 'resource') {
-            throw new \InvalidArgumentException(sprintf('Expected type "resource", got "%s" instead.',
-                gettype($resource)));
-        }
-
-        $this->resource = $resource;
+        $this->repository = $id3tagRepository;
 
         $this->fillTag();
-    }
-
-    public function getSize()
-    {
-        if (! $this->size) {
-            $this->setOffset($this->resource, 6);
-            $data = fread($this->resource, 4);
-            $this->size = base_convert(bin2hex($data), 16, 10);
-        }
-
-        return $this->size;
-    }
-
-    public function getMajorVersion()
-    {
-        if (! $this->majorVersion) {
-            $this->setOffset(3);
-            $this->majorVersion = base_convert(bin2hex(fread($this->resource, 1)), 16, 10);
-        }
-
-        return $this->majorVersion;
-    }
-
-    public function isUnSynchronisation()
-    {
-        $flags = $this->getFlags();
-        $unSynchronisationFlag = 1 << 7;
-        return $flags & $unSynchronisationFlag;
-    }
-
-    public function isExtendedHeader()
-    {
-        $flags = $this->getFlags();
-        $ExtendedHeader = 1 << 6;
-        return $flags & $ExtendedHeader;
-    }
-
-    public function isExperimentalIndicator()
-    {
-        $flags = $this->getFlags();
-        $ExperimentalIndicator = 1 << 6;
-        return $flags & $ExperimentalIndicator;
     }
 
     /**
@@ -82,22 +31,28 @@ class id3tag
         return $title;
     }
 
-    private function getFlags()
+    public function isUnSynchronisation()
     {
-        if (! $this->flags) {
-            $this->setOffset($this->resource, 5);
-            $this->flags = fread($this->resource, 1);
-        }
-
-        return $this->flags;
+        $flags = $this->repository->getFlags();
+        $unSynchronisationFlag = 1 << 7;
+        return $flags & $unSynchronisationFlag;
     }
 
-    private function setOffset($offset)
+    public function isExtendedHeader()
     {
-        fseek($this->resource, $offset);
+        $flags = $this->repository->getFlags();
+        $ExtendedHeader = 1 << 6;
+        return $flags & $ExtendedHeader;
     }
 
-    private function isFrameId($frameId)
+    public function isExperimentalIndicator()
+    {
+        $flags = $this->repository->getFlags();
+        $ExperimentalIndicator = 1 << 6;
+        return $flags & $ExperimentalIndicator;
+    }
+
+    private function isValidFrameId($frameId)
     {
         return preg_match('#[A-Z0-9]{4}#', $frameId);
     }
@@ -113,16 +68,16 @@ class id3tag
 
     private function fillTag()
     {
-        $this->setOffset(self::ID3TAG_LENGTH);
+        $this->repository->offsetToTag();
 
         while (true) {
-            $frameId = fread($this->resource, self::FRAME_ID_LENGTH);
-            if (! $this->isFrameId($frameId)) {
+            $frameId = $this->repository->getCurrentFrameId();
+            if (! $this->isValidFrameId($frameId)) {
                 break;
             }
-            $frameSize = base_convert(bin2hex(fread($this->resource, 4)), 16, 10);
-            $frameFlags = fread($this->resource, 2);
-            $content = fread($this->resource, $frameSize);
+            $frameSize = $this->repository->getCurrentFrameSize();
+            $frameFlags = $this->repository->getCurrentFrameFlags();
+            $content = $this->repository->getCurrentFrameContent($frameSize);
             $this->addFrame($frameId, $frameSize, $frameFlags, $content);
         }
     }

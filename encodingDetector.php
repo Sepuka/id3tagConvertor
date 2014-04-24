@@ -3,7 +3,7 @@ namespace main;
 
 require 'autoloader.php';
 
-class detectEncoding
+class encodingDetector
 {
     private $availableEncodings = [
         'cp1251'
@@ -11,11 +11,9 @@ class detectEncoding
 
     public function __construct($filePath)
     {
-        if (! $this->isReadableFile($filePath)) {
-            throw new \RuntimeException("Enable to read '{$filePath}' file.");
-        }
+        $repository = new id3tagRepository($filePath);
 
-        $id3tag = $this->createId3Tag($filePath);
+        $id3tag = $this->createId3Tag($repository);
         $this->printVariations($id3tag->getTitleFrame());
     }
 
@@ -36,29 +34,12 @@ class detectEncoding
     }
 
     /**
-     * @param string $filePath
+     * @param id3tagRepository $repository
      * @return id3tag
      * @throws \RuntimeException
      */
-    private function createId3Tag($filePath)
+    private function createId3Tag(id3tagRepository $repository)
     {
-        $resource = fopen($filePath, 'rb');
-
-        if ($resource === false) {
-            $error = error_get_last();
-            throw new \RuntimeException(sprintf('Failed to read file "%s". Error "%s"',
-                $filePath, $error['message']));
-        }
-
-        return new id3tag($resource);
-    }
-
-    /**
-     * @param string $filePath
-     * @return bool
-     */
-    private function isReadableFile($filePath)
-    {
-        return (is_file($filePath) && is_readable($filePath));
+        return new id3tag($repository);
     }
 }

@@ -21,7 +21,7 @@ class main
     {
         if (array_key_exists(self::DETECT_MODE, $parameters)) {
             $filePath = $parameters[self::DETECT_MODE];
-            new detectEncoding($filePath);
+            new encodingDetector($filePath);
         } elseif (array_key_exists(self::CONVERT_MODE, $parameters)) {
 
         } else {
