@@ -32,22 +32,33 @@ class id3tagRepository
         }
     }
 
+    public function save($frames)
+    {
+        rewind($this->resource);
+        $id3tagHeader = fread($this->resource, 6) . pack('L', decbin(strlen($frames)));
+        $music = $this->getMusic();
+        file_put_contents('/tmp/music.mp3', $id3tagHeader . $frames . $music);
+    }
+
     public function getMajorVersion()
     {
         $this->setOffset(3);
         return base_convert(bin2hex(fread($this->resource, 1)), 16, 10);
     }
 
+    /**
+     * @return int
+     */
     public function getTagSize()
     {
-        $this->setOffset($this->resource, 6);
+        $this->setOffset(6);
         $data = fread($this->resource, 4);
         return base_convert(bin2hex($data), 16, 10);
     }
 
     public function getFlags()
     {
-        $this->setOffset($this->resource, 5);
+        $this->setOffset(5);
         return fread($this->resource, 1);
     }
 
@@ -88,5 +99,21 @@ class id3tagRepository
     private function setOffset($offset)
     {
         fseek($this->resource, $offset);
+    }
+
+    private function getMusicOffset()
+    {
+        return self::ID3TAG_HEADER_LENGTH + $this->getTagSize();
+    }
+
+    private function getMusic()
+    {
+        $this->setOffset($this->getMusicOffset());
+        $music = '';
+        while(!feof($this->resource)) {
+            $music .= fread($this->resource, 1024);
+        }
+
+        return $music;
     }
 }

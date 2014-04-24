@@ -13,7 +13,7 @@ class encodingDetector
     {
         $repository = new id3tagRepository($filePath);
 
-        $id3tag = $this->createId3Tag($repository);
+        $id3tag = new id3tag($repository);
         $this->printVariations($id3tag->getTitleFrame());
     }
 
@@ -31,15 +31,5 @@ class encodingDetector
             $content = iconv($encoding, 'UTF-8', $titleFrame[id3tag::CONTENT_FRAME_KEY]);
             $this->printTitle($content, $encoding);
         }
-    }
-
-    /**
-     * @param id3tagRepository $repository
-     * @return id3tag
-     * @throws \RuntimeException
-     */
-    private function createId3Tag(id3tagRepository $repository)
-    {
-        return new id3tag($repository);
     }
 }

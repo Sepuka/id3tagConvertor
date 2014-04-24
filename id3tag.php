@@ -17,6 +17,18 @@ class id3tag
         $this->fillTag();
     }
 
+    public function flush()
+    {
+        $frames = '';
+
+        foreach($this->tags as $frameId => $data) {if ($frameId!='TIT2') continue;
+            $frameSize = pack('N', strlen($data[self::CONTENT_FRAME_KEY]));
+            $frames .= $frameId . $frameSize . $data['flags'] . $data[self::CONTENT_FRAME_KEY];
+        }
+
+        $this->repository->save($frames);
+    }
+
     /**
      * @return mixed
      */
@@ -29,6 +41,11 @@ class id3tag
         }
 
         return $title;
+    }
+
+    public function setTitleFrame($title)
+    {
+        $this->tags[self::TITLE_FRAME_ID][self::CONTENT_FRAME_KEY] = $title;
     }
 
     public function isUnSynchronisation()
