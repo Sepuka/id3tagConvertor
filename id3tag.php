@@ -21,8 +21,9 @@ class id3tag
     {
         $frames = '';
 
-        foreach($this->tags as $frameId => $data) {if ($frameId!='TIT2') continue;
+        foreach($this->tags as $frameId => $data) {
             $frameSize = pack('N', strlen($data[self::CONTENT_FRAME_KEY]));
+            $data[self::CONTENT_FRAME_KEY] = $this->packFrameContent($data[self::CONTENT_FRAME_KEY]);
             $frames .= $frameId . $frameSize . $data['flags'] . $data[self::CONTENT_FRAME_KEY];
         }
 
@@ -67,6 +68,22 @@ class id3tag
         $flags = $this->repository->getFlags();
         $ExperimentalIndicator = 1 << 6;
         return $flags & $ExperimentalIndicator;
+    }
+
+    private function packFrameContent($frameContent)
+    {
+        $result = '';
+
+        for ($i = 0; $i < mb_strlen($frameContent); ++$i) {
+            // I don't know why i do it
+            if (ord($frameContent[$i]) == 0) {
+                $result .= pack('h', 0x03);
+                continue;
+            }
+            $result .= pack('H*', dechex(ord($frameContent[$i])));
+        }
+
+        return $result;
     }
 
     private function isValidFrameId($frameId)

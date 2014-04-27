@@ -19,9 +19,15 @@ class encodingFixer
 
     public function fix()
     {
-        $titleFrame = $this->id3tag->getTitleFrame();
-        $title = iconv($this->correctEncoding, 'UTF-16', $titleFrame[id3tag::CONTENT_FRAME_KEY]);
-        $this->id3tag->setTitleFrame($title);
+        $this->fixTitle();
+
         $this->id3tag->flush();
+    }
+
+    private function fixTitle()
+    {
+        $titleFrame = $this->id3tag->getTitleFrame();
+        $title = iconv($this->correctEncoding, 'UTF-8', $titleFrame[id3tag::CONTENT_FRAME_KEY]);
+        $this->id3tag->setTitleFrame($title);
     }
 }

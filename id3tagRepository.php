@@ -35,7 +35,7 @@ class id3tagRepository
     public function save($frames)
     {
         rewind($this->resource);
-        $id3tagHeader = fread($this->resource, 6) . pack('L', decbin(strlen($frames)));
+        $id3tagHeader = fread($this->resource, 6) . pack('N', strlen($frames));
         $music = $this->getMusic();
         file_put_contents('/tmp/music.mp3', $id3tagHeader . $frames . $music);
     }
