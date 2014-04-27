@@ -17,13 +17,13 @@ class id3tag
         $this->fillTag();
     }
 
-    public function flush()
+    public function flush($encodingFlag)
     {
         $frames = '';
 
         foreach($this->tags as $frameId => $data) {
             $frameSize = pack('N', strlen($data[self::CONTENT_FRAME_KEY]));
-            $data[self::CONTENT_FRAME_KEY] = $this->packFrameContent($data[self::CONTENT_FRAME_KEY]);
+            $data[self::CONTENT_FRAME_KEY] = $this->packFrameContent($data[self::CONTENT_FRAME_KEY], $encodingFlag);
             $frames .= $frameId . $frameSize . $data['flags'] . $data[self::CONTENT_FRAME_KEY];
         }
 
@@ -70,14 +70,14 @@ class id3tag
         return $flags & $ExperimentalIndicator;
     }
 
-    private function packFrameContent($frameContent)
+    private function packFrameContent($frameContent, $encodingFlag)
     {
         $result = '';
 
         for ($i = 0; $i < mb_strlen($frameContent); ++$i) {
             // I don't know why i do it
-            if (ord($frameContent[$i]) == 0) {
-                $result .= pack('h', 0x03);
+            if ($i == 0) {
+                $result .= pack('h', $encodingFlag);
                 continue;
             }
             $result .= pack('H*', dechex(ord($frameContent[$i])));

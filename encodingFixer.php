@@ -17,17 +17,21 @@ class encodingFixer
         $this->correctEncoding = $correctEncoding;
     }
 
-    public function fix()
+    /**
+     * @param string $encoding
+     * @param int $encodingFlag
+     */
+    public function fix($encoding, $encodingFlag)
     {
-        $this->fixTitle();
+        $this->fixTitle($encoding);
 
-        $this->id3tag->flush();
+        $this->id3tag->flush($encodingFlag);
     }
 
-    private function fixTitle()
+    private function fixTitle($encoding)
     {
         $titleFrame = $this->id3tag->getTitleFrame();
-        $title = iconv($this->correctEncoding, 'UTF-8', $titleFrame[id3tag::CONTENT_FRAME_KEY]);
+        $title = iconv($this->correctEncoding, $encoding, $titleFrame[id3tag::CONTENT_FRAME_KEY]);
         $this->id3tag->setTitleFrame($title);
     }
 }
