@@ -41,12 +41,7 @@ class main
 
     private function handle($parameters)
     {
-        if (array_key_exists(self::PATH_TO_FILE_SHORT_PARAMETER, $parameters)) {
-            $filePath = $parameters[self::PATH_TO_FILE_SHORT_PARAMETER];
-        } else {
-            throw new \InvalidArgumentException('Path to file is empty.');
-        }
-
+        $filePath = $this->getFilePath($parameters);
         $this->selected_encoding = $this->selectResultEncoding($parameters);
 
         if (array_key_exists(self::DETECT_MODE_SHORT_PARAMETER, $parameters)) {
@@ -60,7 +55,16 @@ class main
         }
     }
 
-    private function selectResultEncoding($parameters)
+    private function getFilePath(array $parameters)
+    {
+        if (! array_key_exists(self::PATH_TO_FILE_SHORT_PARAMETER, $parameters)) {
+            throw new \InvalidArgumentException('Path to file is empty.');
+        }
+
+        return $parameters[self::PATH_TO_FILE_SHORT_PARAMETER];
+    }
+
+    private function selectResultEncoding(array $parameters)
     {
         if (array_key_exists(self::END_ENCODING_LONG_PARAMETER, $parameters)) {
             if (array_key_exists($parameters[self::END_ENCODING_LONG_PARAMETER], $this->availableEncodings)) {
