@@ -5,6 +5,7 @@ class id3tag
 {
     const CONTENT_FRAME_KEY = 'content';
     const TITLE_FRAME_ID = 'TIT2';
+    const ARTIST_FRAME_ID = 'TPE1';
 
     /** @var id3tagRepository */
     private $repository;
@@ -47,6 +48,22 @@ class id3tag
     public function setTitleFrame($title)
     {
         $this->tags[self::TITLE_FRAME_ID][self::CONTENT_FRAME_KEY] = $title;
+    }
+
+    public function getArtistFrame()
+    {
+        $artist = null;
+
+        if (array_key_exists(self::ARTIST_FRAME_ID, $this->tags)) {
+            $artist = $this->tags[self::ARTIST_FRAME_ID];
+        }
+
+        return $artist;
+    }
+
+    public function setArtistFrame($artist)
+    {
+        $this->tags[self::ARTIST_FRAME_ID][self::CONTENT_FRAME_KEY] = $artist;
     }
 
     public function isUnSynchronisation()

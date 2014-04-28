@@ -7,16 +7,16 @@ class main
 {
     const FILE_EXTENSION = 'mp3';
     const DEFAULT_RESULT_ENCODING = 'UTF-8';
-    const DETECT_MODE_SHORT_PARAMETER = 'd';
+    const DETECT_MODE_SHORT_OPTION = 'd';
     const CONVERT_MODE_SHORT_PARAMETER = 'c';
     const PATH_TO_FILE_SHORT_PARAMETER = 'f';
-    const END_ENCODING_LONG_PARAMETER = 'to-encoding';
+    const RESULT_ENCODING_LONG_PARAMETER = 'to-encoding';
 
     private $availableEncodings = [
         'UTF-8' => 0x03,
         'UTF-16' => 0x01
     ];
-    private $selected_encoding;
+    private $selectedResultEncoding;
 
     public function __construct(array $parameters)
     {
@@ -26,38 +26,43 @@ class main
             $this->help($ex->getMessage());
         }
     }
-
-    /**
-     * @return mixed
-     */
-    public function getSelectedEncoding()
-    {
-        return $this->selected_encoding;
-    }
-
-    public function getEncodingFlag()
-    {
-        return $this->availableEncodings[$this->getSelectedEncoding()];
-    }
-
     private function handle($parameters)
     {
         $filePaths = $this->getFilePaths($parameters);
-        $this->selected_encoding = $this->selectResultEncoding($parameters);
+        $this->selectedResultEncoding = $this->selectResultEncoding($parameters);
 
-        if (array_key_exists(self::DETECT_MODE_SHORT_PARAMETER, $parameters)) {
+        if (array_key_exists(self::DETECT_MODE_SHORT_OPTION, $parameters)) {
             foreach($filePaths as $filePath) {
                 new encodingDetector($filePath);
             }
         } elseif (array_key_exists(self::CONVERT_MODE_SHORT_PARAMETER, $parameters)) {
-            $encoding = $parameters[self::CONVERT_MODE_SHORT_PARAMETER];
+            $sourceEncoding = $parameters[self::CONVERT_MODE_SHORT_PARAMETER];
             foreach($filePaths as $filePath) {
-                $fixer = new encodingFixer($filePath, $encoding);
-                $fixer->fix($this->getSelectedEncoding(), $this->getEncodingFlag());
+                $fixer = new encodingFixer(
+                    $filePath,
+                    $this->getSelectedResultEncoding(),
+                    $this->getEncodingFlag(),
+                    $sourceEncoding
+                );
+                $fixer->fix();
             }
         } else {
             throw new \InvalidArgumentException('Unknown command.');
         }
+    }
+
+
+    /**
+     * @return mixed
+     */
+    public function getSelectedResultEncoding()
+    {
+        return $this->selectedResultEncoding;
+    }
+
+    public function getEncodingFlag()
+    {
+        return $this->availableEncodings[$this->getSelectedResultEncoding()];
     }
 
     /**
@@ -85,12 +90,12 @@ class main
 
     private function selectResultEncoding(array $parameters)
     {
-        if (array_key_exists(self::END_ENCODING_LONG_PARAMETER, $parameters)) {
-            if (array_key_exists($parameters[self::END_ENCODING_LONG_PARAMETER], $this->availableEncodings)) {
-                return $parameters[self::END_ENCODING_LONG_PARAMETER];
+        if (array_key_exists(self::RESULT_ENCODING_LONG_PARAMETER, $parameters)) {
+            if (array_key_exists($parameters[self::RESULT_ENCODING_LONG_PARAMETER], $this->availableEncodings)) {
+                return $parameters[self::RESULT_ENCODING_LONG_PARAMETER];
             } else {
                 throw new InvalidArgumentException(sprintf('Unknown encoding "%s"! Available encodings "%s"',
-                    $parameters[self::END_ENCODING_LONG_PARAMETER], implode(',', $this->availableEncodings)
+                    $parameters[self::RESULT_ENCODING_LONG_PARAMETER], implode(',', $this->availableEncodings)
                 ));
             }
         }
@@ -105,7 +110,7 @@ class main
         }
 
         print "-d \t - OPTION detect encoding ID3 tags action\n";
-        print "-c \t - OPTION convert encoding ID3 tags action\n";
+        print "-c \t - PARAMETER convert encoding ID3 tags action\n";
         print "-f \t - PARAMETER path to file\n";
         print str_repeat('=', 50) . "\n";
         print "--to-encoding \t - PARAMETER convert to specified encoding. UTF-8 default.\n";
