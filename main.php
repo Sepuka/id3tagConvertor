@@ -5,6 +5,7 @@ require 'autoloader.php';
 
 class main
 {
+    const FILE_EXTENSION = 'mp3';
     const DEFAULT_RESULT_ENCODING = 'UTF-8';
     const DETECT_MODE_SHORT_PARAMETER = 'd';
     const CONVERT_MODE_SHORT_PARAMETER = 'c';
@@ -41,27 +42,45 @@ class main
 
     private function handle($parameters)
     {
-        $filePath = $this->getFilePath($parameters);
+        $filePaths = $this->getFilePaths($parameters);
         $this->selected_encoding = $this->selectResultEncoding($parameters);
 
         if (array_key_exists(self::DETECT_MODE_SHORT_PARAMETER, $parameters)) {
-            new encodingDetector($filePath);
+            foreach($filePaths as $filePath) {
+                new encodingDetector($filePath);
+            }
         } elseif (array_key_exists(self::CONVERT_MODE_SHORT_PARAMETER, $parameters)) {
             $encoding = $parameters[self::CONVERT_MODE_SHORT_PARAMETER];
-            $fixer = new encodingFixer($filePath, $encoding);
-            $fixer->fix($this->getSelectedEncoding(), $this->getEncodingFlag());
+            foreach($filePaths as $filePath) {
+                $fixer = new encodingFixer($filePath, $encoding);
+                $fixer->fix($this->getSelectedEncoding(), $this->getEncodingFlag());
+            }
         } else {
             throw new \InvalidArgumentException('Unknown command.');
         }
     }
 
-    private function getFilePath(array $parameters)
+    /**
+     * @param array $parameters
+     * @return array
+     * @throws \InvalidArgumentException
+     */
+    private function getFilePaths(array $parameters)
     {
         if (! array_key_exists(self::PATH_TO_FILE_SHORT_PARAMETER, $parameters)) {
-            throw new \InvalidArgumentException('Path to file is empty.');
+            throw new \InvalidArgumentException('Path to files is empty.');
         }
 
-        return $parameters[self::PATH_TO_FILE_SHORT_PARAMETER];
+        $path = $parameters[self::PATH_TO_FILE_SHORT_PARAMETER];
+        if (is_file($path)) {
+            return [
+                $parameters[self::PATH_TO_FILE_SHORT_PARAMETER]
+            ];
+        } elseif (is_dir($path)) {
+            return glob(sprintf('%s/*%s', $path, self::FILE_EXTENSION));
+        } else {
+            throw new \InvalidArgumentException('Path must be a file or dir.');
+        }
     }
 
     private function selectResultEncoding(array $parameters)
