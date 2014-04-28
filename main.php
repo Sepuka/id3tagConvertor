@@ -104,11 +104,11 @@ class main
             print "Error: {$error}\n\n";
         }
 
-        print "-d \t - detect encoding ID3 tags action\n";
-        print "-c \t - convert encoding ID3 tags action\n";
-        print "-f \t - path to file\n";
+        print "-d \t - OPTION detect encoding ID3 tags action\n";
+        print "-c \t - OPTION convert encoding ID3 tags action\n";
+        print "-f \t - PARAMETER path to file\n";
         print str_repeat('=', 50) . "\n";
-        print "--to-encoding \t - convert to specified encoding. UTF-8 default.\n";
+        print "--to-encoding \t - PARAMETER convert to specified encoding. UTF-8 default.\n";
         print "\n";
         print "Example for detect: php ./main.php -d -f=/path/to/file.mp3\n";
         print "Example for fix: php ./main.php -c=cp1251 -f=/path/to/file.mp3\n";
