@@ -16,32 +16,35 @@ class main
         'UTF-8' => 0x03,
         'UTF-16' => 0x01
     ];
-    private $selectedResultEncoding;
+
+    private $parameters;
 
     public function __construct(array $parameters)
     {
+        $this->parameters = $parameters;
         try {
-            $this->handle($parameters);
+            $this->handle();
         } catch (\Exception $ex) {
             $this->help($ex->getMessage());
         }
     }
-    private function handle($parameters)
+    private function handle()
     {
-        $filePaths = $this->getFilePaths($parameters);
-        $this->selectedResultEncoding = $this->selectResultEncoding($parameters);
+        $filePaths = $this->getFilePaths();
 
-        if (array_key_exists(self::DETECT_MODE_SHORT_OPTION, $parameters)) {
+        if ($this->isDetectEncodingMode()) {
             foreach($filePaths as $filePath) {
                 new encodingDetector($filePath);
             }
-        } elseif (array_key_exists(self::CONVERT_MODE_SHORT_PARAMETER, $parameters)) {
-            $sourceEncoding = $parameters[self::CONVERT_MODE_SHORT_PARAMETER];
+        } elseif ($this->isConvertEncodingMode()) {
+            $sourceEncoding = $this->getSourceEncoding();
+            $resultEncoding = $this->getSelectResultEncoding();
+
             foreach($filePaths as $filePath) {
                 $fixer = new encodingFixer(
                     $filePath,
-                    $this->getSelectedResultEncoding(),
-                    $this->getEncodingFlag(),
+                    $resultEncoding,
+                    $this->availableEncodings[$resultEncoding],
                     $sourceEncoding
                 );
                 $fixer->fix();
@@ -51,35 +54,20 @@ class main
         }
     }
 
-
     /**
-     * @return mixed
-     */
-    public function getSelectedResultEncoding()
-    {
-        return $this->selectedResultEncoding;
-    }
-
-    public function getEncodingFlag()
-    {
-        return $this->availableEncodings[$this->getSelectedResultEncoding()];
-    }
-
-    /**
-     * @param array $parameters
      * @return array
      * @throws \InvalidArgumentException
      */
-    private function getFilePaths(array $parameters)
+    private function getFilePaths()
     {
-        if (! array_key_exists(self::PATH_TO_FILE_SHORT_PARAMETER, $parameters)) {
+        if (! array_key_exists(self::PATH_TO_FILE_SHORT_PARAMETER, $this->parameters)) {
             throw new \InvalidArgumentException('Path to files is empty.');
         }
 
-        $path = $parameters[self::PATH_TO_FILE_SHORT_PARAMETER];
+        $path = $this->parameters[self::PATH_TO_FILE_SHORT_PARAMETER];
         if (is_file($path)) {
             return [
-                $parameters[self::PATH_TO_FILE_SHORT_PARAMETER]
+                $this->parameters[self::PATH_TO_FILE_SHORT_PARAMETER]
             ];
         } elseif (is_dir($path)) {
             return glob(sprintf('%s/*%s', $path, self::FILE_EXTENSION));
@@ -88,19 +76,36 @@ class main
         }
     }
 
-    private function selectResultEncoding(array $parameters)
+    private function getSelectResultEncoding()
     {
-        if (array_key_exists(self::RESULT_ENCODING_LONG_PARAMETER, $parameters)) {
-            if (array_key_exists($parameters[self::RESULT_ENCODING_LONG_PARAMETER], $this->availableEncodings)) {
-                return $parameters[self::RESULT_ENCODING_LONG_PARAMETER];
+        if (array_key_exists(self::RESULT_ENCODING_LONG_PARAMETER, $this->parameters)) {
+            if (array_key_exists($this->parameters[self::RESULT_ENCODING_LONG_PARAMETER], $this->availableEncodings)) {
+                return $this->parameters[self::RESULT_ENCODING_LONG_PARAMETER];
             } else {
                 throw new InvalidArgumentException(sprintf('Unknown encoding "%s"! Available encodings "%s"',
-                    $parameters[self::RESULT_ENCODING_LONG_PARAMETER], implode(',', $this->availableEncodings)
+                    $this->parameters[self::RESULT_ENCODING_LONG_PARAMETER], implode(',', $this->availableEncodings)
                 ));
             }
         }
 
         return self::DEFAULT_RESULT_ENCODING;
+    }
+
+    private function getSourceEncoding()
+    {
+        $sourceEncoding = $this->parameters[self::CONVERT_MODE_SHORT_PARAMETER];
+        # :TODO: check available encodings?
+        return $sourceEncoding;
+    }
+
+    private function isDetectEncodingMode()
+    {
+        return (array_key_exists(self::DETECT_MODE_SHORT_OPTION, $this->parameters));
+    }
+
+    private function isConvertEncodingMode()
+    {
+        return (array_key_exists(self::CONVERT_MODE_SHORT_PARAMETER, $this->parameters));
     }
 
     private function help($error = null)
